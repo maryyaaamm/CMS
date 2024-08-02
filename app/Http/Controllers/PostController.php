@@ -21,15 +21,18 @@ class PostController extends Controller
     //     $posts = Post::all(); // Adjust this query as needed
     //     return view('posts.index', compact('posts'));
     // }
+
     public function index()
     {
         // Retrieve posts based on user role
         if (Auth::user()->hasRole('superadmin')) {
             $posts = Post::all();
         } else {
-            $posts = Post::where('status', 'active')
-                         ->where('approved', true)
-                         ->get();
+            $posts = Post::all();
+
+            // $posts = Post::where('status', 'active')
+            //              ->where('approved', true)
+            //              ->get();
         }
         return view('posts.index', compact('posts'));
     }
@@ -115,36 +118,36 @@ class PostController extends Controller
         return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
     }
     public function approve(Post $post)
-{
-    // Check if the authenticated user is a superadmin
-    if (!auth()->user()->hasRole('superadmin')) {
-        abort(403, 'Unauthorized action.');
+    {
+        // Check if the authenticated user is a superadmin
+        if (!auth()->user()->hasRole('superadmin')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Update post approval and status
+        $post->approved = 1; // Set to 1 for approved
+        $post->status = 'active'; // Set status to active when approved
+        $post->save();
+
+        // Redirect with a success message
+        return redirect()->route('posts.index')->with('status', 'Post approved!');
     }
 
-    // Update post approval and status
-    $post->approved = 1; // Set to 1 for approved
-    $post->status = 'active'; // Set status to active when approved
-    $post->save();
+    public function disapprove(Post $post)
+    {
+        // Check if the authenticated user is a superadmin
+        if (!auth()->user()->hasRole('superadmin')) {
+            abort(403, 'Unauthorized action.');
+        }
 
-    // Redirect with a success message
-    return redirect()->route('posts.index')->with('status', 'Post approved!');
-}
+        // Update post approval and status
+        $post->approved = 0; // Set to 0 for disapproved
+        $post->status = 'inactive'; // Set status to inactive when disapproved
+        $post->save();
 
-public function disapprove(Post $post)
-{
-    // Check if the authenticated user is a superadmin
-    if (!auth()->user()->hasRole('superadmin')) {
-        abort(403, 'Unauthorized action.');
+        // Redirect with a success message
+        return redirect()->route('posts.index')->with('status', 'Post disapproved!');
     }
-
-    // Update post approval and status
-    $post->approved = 0; // Set to 0 for disapproved
-    $post->status = 'inactive'; // Set status to inactive when disapproved
-    $post->save();
-
-    // Redirect with a success message
-    return redirect()->route('posts.index')->with('status', 'Post disapproved!');
-}
 
 
     public function destroy($id)
@@ -177,5 +180,48 @@ public function disapprove(Post $post)
         }
 
         return view('posts.show', compact('post'));
+    }
+    public function like(Post $post)
+    {
+        $post->likes()->attach(auth()->user()->id);
+        return back();
+    }
+
+    public function unlike(Post $post)
+    {
+        $post->likes()->detach(auth()->user()->id);
+        return back();
+    }
+
+    public function feed()
+    {
+        $posts = Post::where('status', 'active')
+            ->where('approved', true)
+            ->get();
+        return view('posts.index', compact('posts'));
+    }
+    public function welcome()
+    {
+        $posts = Post::where('status', 'active')
+            ->where('approved', true)
+            ->get();
+        return view('posts.welcome', compact('posts'));
+    }
+    public function storecomments(Request $request, Post $post)
+    {
+        // Validate the request
+        $request->validate([
+            'content' => 'required|max:255',
+        ]);
+
+        // Create a new comment
+        $comment = new Comment();
+        $comment->content = $request->content;
+        $comment->user_id = auth()->id();
+        $comment->post_id = $post->id;
+        $comment->save();
+
+        // Redirect back to the post
+        return redirect()->route('posts.show', $post->id)->with('success', 'Comment added successfully!');
     }
 }

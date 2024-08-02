@@ -1,29 +1,38 @@
 @extends('layouts.app')
 
 <style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f9f9f9;
+        color: #333;
+    }
+
     .container {
-        padding: 0 15px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
     }
 
     .list-group {
         display: flex;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 20px;
     }
 
     .list-group-item {
-        background: #fff;
-        border: 1px solid #ddd;
+        background-color: #fff;
         border-radius: 10px;
-        overflow: hidden;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        width: 100%;
-        max-width: 300px;
-        transition: transform 0.2s ease;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        width: calc(33.333% - 20px);
+        display: flex;
+        flex-direction: column;
     }
 
     .list-group-item:hover {
-        transform: scale(1.02);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     }
 
     .list-group-item img {
@@ -35,6 +44,7 @@
     .list-group-item h5 {
         margin: 15px;
         font-size: 1.2em;
+        color: #333;
     }
 
     .list-group-item p {
@@ -43,36 +53,43 @@
     }
 
     .btn {
+        display: inline-block;
         border-radius: 50px;
         padding: 8px 16px;
         font-size: 0.875em;
         text-transform: uppercase;
+        font-weight: bold;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
     }
 
     .btn-primary {
-        background: #3490dc;
+        background-color: #e91e63;
         color: #fff;
-        border: none;
+        margin-right: 5px;
     }
 
     .btn-primary:hover {
-        background: #2779bd;
+        background-color: #c2185b;
     }
 
     .btn-secondary {
-        background: #6c757d;
-        color: #fff;
-        border: none;
+        background-color: #f5f5f5;
+        color: #e91e63;
     }
 
     .btn-secondary:hover {
-        background: #5a6268;
+        background-color: #e0e0e0;
+    }
+
+    .btn-warning, .btn-danger {
+        margin-right: 5px;
     }
 
     .icon {
         font-size: 1.2em;
         margin-right: 0.5em;
-        color: #666;
     }
 
     .icon-like {
@@ -105,19 +122,79 @@
     }
 
     .btn-approve {
-        background: #28a745;
+        background-color: #28a745;
     }
 
     .btn-approve:hover {
-        background: #218838;
+        background-color: #218838;
     }
 
     .btn-disapprove {
-        background: #dc3545;
+        background-color: #dc3545;
     }
 
     .btn-disapprove:hover {
-        background: #c82333;
+        background-color: #c82333;
+    }
+
+    .comments-section {
+        margin-top: 10px;
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .comments-list {
+        max-height: 150px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+    }
+
+    .comment {
+        padding: 5px 0;
+    }
+
+    .comment-user {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+
+    .comment-text {
+        color: #555;
+    }
+
+    .comment-input {
+        display: flex;
+        align-items: center;
+    }
+
+    .comment-input textarea {
+        width: 100%;
+        border: none;
+        border-radius: 20px;
+        padding: 5px 10px;
+        resize: none;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .comment-input button {
+        margin-left: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .list-group-item {
+            width: calc(50% - 20px);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .list-group-item {
+            width: 100%;
+        }
     }
 </style>
 
@@ -125,7 +202,6 @@
 
 @section('content')
 <div class="container">
-    <h1>Posts</h1>
     @if(!auth()->user()->hasRole('superadmin'))
         <a href="{{ route('posts.create') }}" class="btn btn-primary">Create Post</a>
     @endif
@@ -133,7 +209,7 @@
         @foreach($posts as $post)
         <li class="list-group-item">
             @if($post->image)
-                <img src="{{ asset('storage/' . $post->image) }}" alt="{{ $post->title }}" class="img-fluid">
+                <img src="{{ asset('storage/' . $post->image) }}" alt="{{ $post->title }}">
             @endif
             <h5><a href="{{ route('posts.show', $post->id) }}">{{ $post->title }}</a></h5>
             <p>Status: {{ $post->status }}</p>
@@ -162,14 +238,46 @@
                             </form>
                         @endif
                     @endif
-
-                    <!-- Like and Comment Icons -->
-                    <div>
-                        <span class="icon icon-like"><i class="fas fa-thumbs-up"></i> Like</span>
-                        <span class="icon icon-comment"><i class="fas fa-comments"></i> Comment</span>
-                    </div>
                 </div>
             @endif
+
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                @if($post->likes->contains(auth()->user()->id))
+                    <form action="{{ route('posts.unlike', $post->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-secondary"><i class="fas fa-thumbs-down"></i> Unlike</button>
+                    </form>
+                @else
+                    <form action="{{ route('posts.like', $post->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-thumbs-up"></i> Like</button>
+                    </form>
+                @endif
+                <span class="icon icon-comment"><i class="fas fa-comments"></i> {{ $post->likes->count() }} Likes</span>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="comments-section">
+                <div class="comments-list">
+                    @foreach($post->comments as $comment)
+                        <div class="comment">
+                            <span class="comment-user">{{ $comment->user->name }}</span>
+                            <span class="comment-text">{{ $comment->content }}</span>
+                        </div>
+                    @endforeach
+                </div>
+                {{-- <form action="{{ route('comments.store', ['post' => $post->id]) }}" method="POST">
+                    @csrf
+                    <textarea name="content" required></textarea>
+                    <button type="submit">Add Comment</button>
+                </form> --}}
+                <form action="{{ route('comments.store', $post->id) }}" method="POST" class="comment-input">
+                    @csrf
+                    <textarea name="content" rows="1" placeholder="Add a comment..." required></textarea>
+                    <button type="submit" class="btn btn-primary">Post</button>
+                </form>
+
+            </div>
         </li>
         @endforeach
     </ul>
