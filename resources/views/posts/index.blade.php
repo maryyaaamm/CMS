@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 <style>
+    /* General Styles */
     body {
         font-family: 'Roboto', sans-serif;
         background-color: #f9f9f9;
@@ -13,6 +14,7 @@
         padding: 20px;
     }
 
+    /* Post List Styles */
     .list-group {
         display: flex;
         flex-wrap: wrap;
@@ -52,6 +54,7 @@
         color: #666;
     }
 
+    /* Button Styles */
     .btn {
         display: inline-block;
         border-radius: 50px;
@@ -83,7 +86,8 @@
         background-color: #e0e0e0;
     }
 
-    .btn-warning, .btn-danger {
+    .btn-warning,
+    .btn-danger {
         margin-right: 5px;
     }
 
@@ -137,6 +141,7 @@
         background-color: #c82333;
     }
 
+    /* Comments Section */
     .comments-section {
         margin-top: 10px;
         padding: 10px 15px;
@@ -185,6 +190,7 @@
         margin-left: 10px;
     }
 
+    /* Responsive Styles */
     @media (max-width: 768px) {
         .list-group-item {
             width: calc(50% - 20px);
@@ -199,87 +205,118 @@
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 @section('content')
-<div class="container">
-    @if(!auth()->user()->hasRole('superadmin'))
-        <a href="{{ route('posts.create') }}" class="btn btn-primary">Create Post</a>
-    @endif
-    <ul class="list-group mt-3">
-        @foreach($posts as $post)
-        <li class="list-group-item">
-            @if($post->image)
-                <img src="{{ asset('storage/' . $post->image) }}" alt="{{ $post->title }}">
-            @endif
-            <h5><a href="{{ route('posts.show', $post->id) }}">{{ $post->title }}</a></h5>
-            <p>Status: {{ $post->status }}</p>
-
-            @if(Auth::user()->id == $post->user_id || Auth::user()->hasRole('superadmin'))
-                <div class="d-flex justify-content-between align-items-center">
-                    @if(!auth()->user()->hasRole('superadmin'))
-                        <a href="{{ route('posts.edit', $post->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                        <form action="{{ route('posts.destroy', $post->id) }}" method="POST" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                        </form>
+    <div class="container">
+        @if (!auth()->user()->hasRole('superadmin'))
+            <a href="{{ route('posts.create') }}" class="btn btn-primary">Create Post</a>
+        @endif
+        <ul class="list-group mt-3">
+            @foreach ($posts as $post)
+                <li class="list-group-item">
+                    @if ($post->image)
+                        <img src="{{ asset('storage/' . $post->image) }}" alt="{{ $post->title }}">
                     @endif
+                    <h5><a href="{{ route('posts.show', $post->id) }}">{{ $post->title }}</a></h5>
+                    <p>Status: {{ $post->status }}</p>
 
-                    @if(auth()->user()->hasRole('superadmin'))
-                        @if($post->approved)
-                            <form action="{{ route('posts.disapprove', $post->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn status-button btn-disapprove">Disapprove</button>
-                            </form>
-                        @else
-                            <form action="{{ route('posts.approve', $post->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn status-button btn-approve">Approve</button>
-                            </form>
-                        @endif
-                    @endif
-                </div>
-            @endif
+                    @if (Auth::user()->id == $post->user_id || Auth::user()->hasRole('superadmin'))
+                        <div class="d-flex justify-content-between align-items-center">
+                            @if (!auth()->user()->hasRole('superadmin'))
+                                <a href="{{ route('posts.edit', $post->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                                <form action="{{ route('posts.destroy', $post->id) }}" method="POST"
+                                    style="display:inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                </form>
+                            @endif
 
-            <div class="d-flex justify-content-between align-items-center mt-2">
-                @if($post->likes->contains(auth()->user()->id))
-                    <form action="{{ route('posts.unlike', $post->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-secondary"><i class="fas fa-thumbs-down"></i> Unlike</button>
-                    </form>
-                @else
-                    <form action="{{ route('posts.like', $post->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-thumbs-up"></i> Like</button>
-                    </form>
-                @endif
-                <span class="icon icon-comment"><i class="fas fa-comments"></i> {{ $post->likes->count() }} Likes</span>
-            </div>
-
-            <!-- Comments Section -->
-            <div class="comments-section">
-                <div class="comments-list">
-                    @foreach($post->comments as $comment)
-                        <div class="comment">
-                            <span class="comment-user">{{ $comment->user->name }}</span>
-                            <span class="comment-text">{{ $comment->content }}</span>
+                            @if (auth()->user()->hasRole('superadmin'))
+                                @if ($post->approved)
+                                    <form action="{{ route('posts.disapprove', $post->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn status-button btn-disapprove">Disapprove</button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('posts.approve', $post->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn status-button btn-approve">Approve</button>
+                                    </form>
+                                @endif
+                            @endif
                         </div>
-                    @endforeach
-                </div>
-                {{-- <form action="{{ route('comments.store', ['post' => $post->id]) }}" method="POST">
-                    @csrf
-                    <textarea name="content" required></textarea>
-                    <button type="submit">Add Comment</button>
-                </form> --}}
-                <form action="{{ route('comments.store', $post->id) }}" method="POST" class="comment-input">
-                    @csrf
-                    <textarea name="content" rows="1" placeholder="Add a comment..." required></textarea>
-                    <button type="submit" class="btn btn-primary">Post</button>
-                </form>
+                    @endif
 
-            </div>
-        </li>
-        @endforeach
-    </ul>
-</div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <button class="btn like-btn {{ $post->likes->contains(auth()->user()->id) ? 'btn-secondary' : 'btn-primary' }}"
+                                data-post-id="{{ $post->id }}"
+                                data-liked="{{ $post->likes->contains(auth()->user()->id) ? 'true' : 'false' }}">
+                            <i class="fas fa-thumbs-{{ $post->likes->contains(auth()->user()->id) ? 'down' : 'up' }}"></i>
+                            {{ $post->likes->contains(auth()->user()->id) ? 'Unlike' : 'Like' }}
+                        </button>
+                        <span class="icon icon-comment">
+                            <i class="fas fa-comments"></i>
+                            <span class="likes-count">{{ $post->likes->count() }} Likes</span>
+                        </span>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="comments-section">
+                        <div class="comments-list">
+                            @foreach ($post->comments as $comment)
+                                <div class="comment">
+                                    <span class="comment-user">{{ $comment->user->name }}</span>
+                                    <span class="comment-text">{{ $comment->content }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                        <form action="{{ route('comments.store', $post->id) }}" method="POST" class="comment-input">
+                            @csrf
+                            <textarea name="content" rows="1" placeholder="Add a comment..." required></textarea>
+                            <button type="submit" class="btn btn-primary">Post</button>
+                        </form>
+                    </div>
+                </li>
+            @endforeach
+        </ul>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('.like-btn').on('click', function(e) {
+                e.preventDefault(); // Prevent default button behavior
+
+                var button = $(this);
+                var postId = button.data('post-id');
+                var isLiked = button.data('liked') === 'true'; // Determine if currently liked
+                var actionUrl = isLiked ? '{{ route("posts.unlike", ":id") }}'.replace(':id', postId) : '{{ route("posts.like", ":id") }}'.replace(':id', postId);
+                var newLikedState = !isLiked; // Toggle the liked state
+
+                $.ajax({
+                    url: actionUrl,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}' // CSRF token for Laravel
+                    },
+                    success: function(response) {
+                        // Update the button and like count
+                        if (response.status === 'liked') {
+                            button.removeClass('btn-primary').addClass('btn-secondary').html('<i class="fas fa-thumbs-down"></i> Unlike');
+                        } else if (response.status === 'unliked') {
+                            button.removeClass('btn-secondary').addClass('btn-primary').html('<i class="fas fa-thumbs-up"></i> Like');
+                        }
+                        button.data('liked', newLikedState); // Update the liked state
+                        button.siblings('.icon-comment').find('.likes-count').text(response.likesCount + ' Likes');
+                    },
+                    error: function(xhr) {
+                        // Handle errors
+                        console.log(xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+
 @endsection

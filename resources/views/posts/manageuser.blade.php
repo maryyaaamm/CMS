@@ -6,12 +6,15 @@
     <title>Admin - Manage Users</title>
     <!-- Fonts -->
     <link href="https://fonts.bunny.net/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Styles -->
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-xxxx" crossorigin="anonymous">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+    <!-- Custom Styles -->
     <style>
         body {
             font-family: 'Nunito', sans-serif;
-            background: linear-gradient(to right, #fdfbfb, #ebedee);
+            background: linear-gradient(to right, #fff, #ffebee);
             color: #333;
             margin: 0;
             padding: 0;
@@ -23,23 +26,26 @@
             padding: 20px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        h1 {
+            color: #e91e63; /* Pink color for heading */
         }
 
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        .table {
+            background-color: #fff; /* White background for the table */
         }
 
         th {
-            background-color: #f4f4f4;
+            background-color: #fce4ec; /* Light pink for header background */
+            color: #333; /* Dark text color for better readability */
+        }
+
+        td {
+            background-color: #fff; /* White background for table data */
+            color: #333; /* Dark text color */
         }
 
         .btn-delete {
-            background: #e91e63; /* Pink background */
+            background: #e91e63; /* Pink background for delete button */
             border: none;
             color: #fff;
             padding: 5px 10px;
@@ -52,56 +58,79 @@
         .btn-delete:hover {
             background: #c2185b; /* Darker pink on hover */
         }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            th, td {
+                font-size: 14px; /* Smaller font size for mobile */
+                padding: 8px;
+            }
+
+            .btn-delete {
+                padding: 4px 8px; /* Smaller buttons for mobile */
+            }
+        }
     </style>
 </head>
-<body class="antialiased">
-    <div class="relative flex items-top justify-center min-h-screen sm:items-center py-4 sm:pt-0">
-        <div class="container">
-            @if (Route::has('login'))
-                <div class="fixed top-0 right-0 px-6 py-4 sm:block">
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="text-sm text-gray-700 dark:text-gray-500 underline">Dashboard</a>
-                    @else
-                        <a href="{{ route('login') }}" class="text-sm text-gray-700 dark:text-gray-500 underline">Log in</a>
-                        <a href="{{ route('register') }}" class="ml-4 text-sm text-gray-700 dark:text-gray-500 underline">Register</a>
-                    @endauth
-                </div>
-            @endif
+<body>
+    <div class="container">
+        <h1 class="mb-4 mt-4">Manage Users</h1>
+        @if (session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
 
-            <h2 class="my-4">Manage Users</h2>
-
-            <table class="table">
-                <thead>
+        <!-- DataTable Initialization -->
+        <table class="table table-striped table-hover" id="usersTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($users as $user)
                     <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Active Posts</th>
-                        <th>Disapproved Posts</th>
-                        <th>Actions</th>
+                        <td>{{ $user->name }}</td>
+                        <td>{{ $user->email }}</td>
+                        <td>
+                            <!-- Action Buttons with Confirmation -->
+                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display: inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm btn-delete" onclick="return confirm('Are you sure you want to delete this user?');">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </form>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach($users as $user)
-                        <tr>
-                            <td>{{ $user->name }}</td>
-                            <td>{{ $user->email }}</td>
-                            <td>{{ $user->active_posts_count }}</td>
-                            <td>{{ $user->disapproved_posts_count }}</td>
-                            <td>
-                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-delete">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-xxxx" crossorigin="anonymous"></script>
+    <!-- jQuery (necessary for DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+    <!-- DataTables Initialization -->
+    <script>
+        $(document).ready(function() {
+            $('#usersTable').DataTable({
+                paging: true,   // Enable pagination
+                searching: true // Enable search box
+            });
+        });
+    </script>
 </body>
 </html>

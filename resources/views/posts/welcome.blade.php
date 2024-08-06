@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,11 +8,12 @@
     <!-- Fonts -->
     <link href="https://fonts.bunny.net/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Styles -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-xxxx" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-xxxx" crossorigin="anonymous">
     <style>
         body {
             font-family: 'Nunito', sans-serif;
-            background: linear-gradient(to right, #fdfbfb, #ebedee);
+            background-color: #fafafa; /* Light grey background */
             color: #333;
             margin: 0;
             padding: 0;
@@ -80,7 +82,7 @@
         .comments-section {
             margin-top: 10px;
             padding: 10px 15px;
-            background-color: #f9f9f9;
+            background-color: #fff;
             border-top: 1px solid #ddd;
             flex-grow: 1;
             display: flex;
@@ -124,7 +126,8 @@
         }
 
         .comment-input button {
-            background: #e91e63; /* Pink background */
+            background: #e91e63;
+            /* Pink background */
             border: none;
             border-radius: 20px;
             padding: 8px 15px;
@@ -135,7 +138,51 @@
         }
 
         .comment-input button:hover {
-            background: #c2185b; /* Darker pink on hover */
+            background: #c2185b;
+            /* Darker pink on hover */
+        }
+
+        .like-button {
+            background: #e91e63;
+            /* Pink background */
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .like-button:hover {
+            background: #c2185b;
+            /* Darker pink on hover */
+        }
+
+        .auth-links {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-link {
+            display: inline-block;
+            padding: 5px 10px;
+            color: #fff;
+            background-color: #e91e63;
+            border-radius: 20px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .auth-link:hover {
+            background-color: #c2185b;
+        }
+
+        .auth-link.ml-4 {
+            margin-left: 10px;
         }
 
         @media (max-width: 992px) {
@@ -160,33 +207,9 @@
                 height: auto;
             }
         }
-
-        .auth-links {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            align-items: center;
-        }
-
-        .auth-link {
-            display: inline-block;
-            padding: 5px 10px;
-            color: #fff;
-            background-color: #e91e63;
-            border-radius: 20px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
-        }
-
-        .auth-link:hover {
-            background-color: #c2185b;
-        }
-
-        .auth-link.ml-4 {
-            margin-left: 10px;
-        }
     </style>
 </head>
+
 <body class="antialiased">
     <div class="relative flex items-top justify-center min-h-screen sm:items-center py-4 sm:pt-0">
         <div class="container">
@@ -194,6 +217,13 @@
                 <div class="fixed top-0 right-0 px-6 py-4 sm:block auth-links">
                     @auth
                         <a href="{{ url('/dashboard') }}" class="auth-link">Dashboard</a>
+                        <a href="{{ route('logout') }}" class="auth-link ml-4"
+                           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            Log out
+                        </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                            @csrf
+                        </form>
                     @else
                         <a href="{{ route('login') }}" class="auth-link">Log in</a>
                         <a href="{{ route('register') }}" class="auth-link ml-4">Register</a>
@@ -204,29 +234,37 @@
             <h2 class="my-4">Active Posts</h2>
 
             <ul class="list-group">
-                @foreach($posts as $post)
-                    @if($post->status == 'active' && $post->approved)
+                @foreach ($posts as $post)
+                    @if ($post->status == 'active' && $post->approved)
                         <li class="list-group-item">
-                            @if($post->image)
-                                <img src="{{ asset('storage/' . $post->image) }}" alt="{{ $post->title }}" class="post-img">
+                            @if ($post->image)
+                                <img src="{{ asset('storage/' . $post->image) }}" alt="{{ $post->title }}"
+                                    class="post-img">
                             @endif
-                            <h5><a href="{{ route('posts.show', $post->id) }}">{{ $post->title }}</a></h5>
+                            <h5><a href="{{ route('posts.show', $post->id) }}" class="text-decoration-none">{{ $post->title }}</a></h5>
                             <p>{{ $post->body }}</p>
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <span>Status: {{ $post->status }}</span>
-                                <!-- Like/Unlike, comments, and other functionalities can be added here -->
+                                @auth
+                                    <button id="like-button-{{ $post->id }}" data-post-id="{{ $post->id }}"
+                                        class="like-button {{ $post->likes->contains(auth()->user()->id) ? 'btn-secondary' : 'btn-primary' }}">
+                                        <i class="fas {{ $post->likes->contains(auth()->user()->id) ? 'fa-thumbs-down' : 'fa-thumbs-up' }}"></i>
+                                        {{ $post->likes->contains(auth()->user()->id) ? 'Unlike' : 'Like' }}
+                                    </button>
+                                @endauth
                             </div>
                             <div class="comments-section mt-3">
                                 <div class="comments-list">
-                                    @foreach($post->comments as $comment)
+                                    @foreach ($post->comments as $comment)
                                         <div class="comment">
-                                            <span class="comment-user font-weight-bold">{{ $comment->user->name }}</span>
+                                            <span class="comment-user">{{ $comment->user->name }}</span>
                                             <span class="comment-text">{{ $comment->content }}</span>
                                         </div>
                                     @endforeach
                                 </div>
                                 @auth
-                                    <form action="{{ route('comments.store', $post->id) }}" method="POST" class="comment-input mt-2">
+                                    <form action="{{ route('comments.store', $post->id) }}" method="POST"
+                                        class="comment-input mt-2">
                                         @csrf
                                         <textarea name="content" rows="1" placeholder="Add a comment..." required></textarea>
                                         <button type="submit">Post</button>
@@ -241,6 +279,5 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-xxxx" crossorigin="anonymous"></script>
-</body>
-</html>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js

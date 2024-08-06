@@ -37,8 +37,10 @@ Route::post('posts/{post}/disapprove', [PostController::class, 'disapprove'])->n
     Route::get('posts/create', [PostController::class, 'create'])->name('posts.create');
     Route::get('posts', [PostController::class, 'index'])->name('posts.index');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::post('/posts/{post}/like', [PostController::class, 'like'])->name('posts.like');
-    Route::post('/posts/{post}/unlike', [PostController::class, 'unlike'])->name('posts.unlike');
+    Route::post('posts/{post}/like', [PostController::class, 'like'])->name('posts.like');
+Route::post('posts/{post}/unlike', [PostController::class, 'unlike'])->name('posts.unlike');
+Route::get('/user/posts', [PostController::class, 'userPosts'])->name('user.posts');
+    // Route::post('/posts/{post}/like', [PostController::class, 'toggleLike'])->name('posts.like');
     Route::get('/feed', [PostController::class, 'feed'])->name('posts.feed');
 
 });

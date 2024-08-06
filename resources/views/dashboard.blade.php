@@ -127,6 +127,10 @@
                     <a href="{{ route('posts.feed') }}" class="btn btn-primary">Feed</a>
                 </div>
             </div>
+            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                @csrf
+                <button type="submit" class="btn btn-logout">Logout</button>
+            </form>
         </div>
     </div>
 </body>
